@@ -1,0 +1,38 @@
+﻿@page "/turmas"
+@inject ITurmaService turmaService
+
+@if (Turma == null)
+{
+	<h3>Carregando lista de turmas...</h3>
+}
+else if (Turma.Any())
+{
+    <div class="row mt-3">
+        @foreach (var turma in Turma)
+        {
+            <div class="card" style="width: 18rem;">
+                <div class="card-header">
+                    @turma.NomeDaTurma
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">ID: @turma.Id</li>
+                    <li class="list-group-item">Professor: @turma.Professor</li>
+                    <li class="list-group-item">Turno: @turma.Turno</li>
+                </ul>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <h3>Nenhum aluno encontrado.</h3>
+}
+
+@code {
+
+	public IEnumerable<TurmaDto> Turma { get; set; }
+	protected override async Task OnInitializedAsync()
+	{
+		Turma = await turmaService.GetTurmas();
+	}
+}

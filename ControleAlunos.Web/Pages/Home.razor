@@ -1,0 +1,54 @@
+﻿@page "/"
+@inject NavigationManager navigationManager
+@inject IAlunoService alunoService
+
+<div class="container">    
+    @if (AlunosPage == null)
+    {
+        <h3>Carregando lista de alunos...</h3>
+    }
+    else 
+    {
+        <h3>Buscar Aluno</h3>
+        
+        <nav class="navbar navbar-light bg-light mb-3">
+            <form class="form-inline" @onsubmit="Search">
+                <input class="form-control mr-sm-2" type="search" placeholder="Pesquisar por ID" aria-label="Search" @bind="SearchQuery">
+                <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Pesquisar</button>
+            </form>
+        </nav>
+
+    }    
+</div>
+
+@code {
+    private string SearchQuery { get; set; }
+    private bool IsSearching { get; set; }
+    public IEnumerable<AlunosDto> AlunosPage { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAlunos();
+    }
+
+    private async Task LoadAlunos()
+    {
+        AlunosPage = await alunoService.GetAlunos();
+    }
+
+    
+    private async Task Search()
+    {
+        IsSearching = true;
+        if (!string.IsNullOrEmpty(SearchQuery) && int.TryParse(SearchQuery, out int alunoId))
+        {
+            var aluno = await alunoService.GetAluno(alunoId);
+            if (aluno != null)
+            {
+                
+                navigationManager.NavigateTo($"/alunos/{alunoId}");
+            }
+        }
+        IsSearching = false;
+    }
+}

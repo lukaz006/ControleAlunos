@@ -1,0 +1,143 @@
+﻿@page "/cadastroAluno"
+@inject IAlunoService alunoService
+@inject ITurmaService turmaService
+@inject NavigationManager navigationManager
+
+<div class="container mt-4">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="aluno-tab" data-toggle="tab" href="cadastroAluno" role="tab" aria-controls="aluno" aria-selected="true">Cadastrar Aluno</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="turma-tab" data-toggle="tab" href="cadastroTurma" role="tab" aria-controls="turma" aria-selected="false">Cadastrar Turma</a>
+        </li>
+    </ul>
+    <div class="tab-content mt-3" id="myTabContent">
+        <div class="tab-pane fade show active" id="aluno" role="tabpanel" aria-labelledby="aluno-tab">
+            <!-- Formulário de cadastro de aluno -->
+            <form @onsubmit="HandleAluno">
+                <form @onsubmit="HandleAluno">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="inputNome"><strong>Nome</strong></label>
+                            <input type="text" class="form-control @((MostrarErroNome && string.IsNullOrWhiteSpace(Aluno.Nome)) ? "is-invalid" : "")" id="inputNome"
+                                   placeholder="Nome do aluno" @bind="Aluno.Nome">
+                            @if (MostrarErroNome && string.IsNullOrWhiteSpace(Aluno.Nome))
+                            {
+                                <div class="invalid-feedback">Por favor, insira o nome do aluno.</div>
+                            }
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="inputEndereco"><strong>Endereço</strong></label>
+                            <input type="text" class="form-control @((MostrarErroEndereco && string.IsNullOrWhiteSpace(Aluno.Endereco)) ? "is-invalid" : "")" id="inputEndereco"
+                                   placeholder="Endereço do aluno" @bind="Aluno.Endereco">
+                            @if (MostrarErroEndereco && string.IsNullOrWhiteSpace(Aluno.Endereco))
+                            {
+                                <div class="invalid-feedback">Por favor, insira o endereço do aluno.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputResponsavel"><strong>Responsável</strong></label>
+                        <input type="text" class="form-control @((MostrarErroResponsavel && string.IsNullOrWhiteSpace(Aluno.NomePaiOuMae)) ? "is-invalid" : "")" id="inputResponsavel"
+                               placeholder="Nome do responsável legal" @bind="Aluno.NomePaiOuMae">
+                        @if (MostrarErroResponsavel && string.IsNullOrWhiteSpace(Aluno.NomePaiOuMae))
+                        {
+                            <div class="invalid-feedback">Por favor, insira o nome do responsável legal.</div>
+                        }
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputIdade"><strong>Idade</strong></label>
+                        <input type="text" class="form-control @((MostrarErroIdade && Aluno.Idade == 0) ? "is-invalid" : "")" id="inputIdade"
+                               placeholder="Idade" @bind="Aluno.Idade">
+                        @if (MostrarErroIdade && Aluno.Idade == 0)
+                        {
+                            <div class="invalid-feedback">Por favor, insira uma idade válida.</div>
+                        }
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="inputTurma"><strong>Turma</strong></label>
+                            <div class="position-relative">
+                                <select id="inputTurma" class="form-control @((MostrarErroTurma && Aluno.TurmaId == 0 ) ? "is-invalid" : "")" @bind="Aluno.TurmaId">
+                                    <option value="" selected>Selecione...</option>
+                                    @foreach (var turma in Turmas)
+                                    {
+                                        <option value="@turma.Id">@turma.NomeDaTurma</option>
+                                    }
+                                </select>
+                                @if (MostrarErroTurma && Aluno.TurmaId == 0)
+                                {
+                                    <div class="invalid-feedback">Por favor, selecione a turma do aluno.</div>
+                                }
+                                <div class="position-absolute" style="top: 50%; right: 10px; transform: translateY(-50%);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 1 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn btn-primary">Cadastrar</button>
+                </form>
+            </form>
+        </div>
+    </div>
+</div>
+
+@code {
+    public AlunosDto Aluno { get; set; } = new AlunosDto();
+    public bool MostrarErroNome { get; set; }
+    public bool MostrarErroEndereco { get; set; }
+    public bool MostrarErroResponsavel { get; set; }
+    public bool MostrarErroIdade { get; set; }
+    public bool MostrarErroTurma { get; set; }
+    public IEnumerable<TurmaDto> Turmas { get; set; } = new List<TurmaDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Turmas = await turmaService.GetTurmas();
+    }
+
+    private async Task HandleAluno()
+    {
+        MostrarErroNome = string.IsNullOrWhiteSpace(Aluno.Nome);
+        MostrarErroEndereco = string.IsNullOrWhiteSpace(Aluno.Endereco);
+        MostrarErroResponsavel = string.IsNullOrWhiteSpace(Aluno.NomePaiOuMae);
+        MostrarErroIdade = Aluno.Idade == 0;
+        MostrarErroTurma = Aluno.TurmaId == 0;
+
+        if (!MostrarErroNome && !MostrarErroEndereco && !MostrarErroResponsavel && !MostrarErroIdade && !MostrarErroTurma)
+        {
+            try
+            {
+                // Chama o método para cadastrar o aluno
+                await CadastrarAluno(Aluno.Nome, Aluno.Endereco, Aluno.NomePaiOuMae, Aluno.Idade, Aluno.TurmaId);
+                // Limpa os dados do aluno após o cadastro
+                Aluno = new AlunosDto();
+                // Recarrega a página após o cadastro
+                navigationManager.NavigateTo("/cadastroAluno");
+            }
+            catch (Exception ex)
+            {
+                // Trata erros de requisição
+                Console.WriteLine($"Erro ao cadastrar aluno: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task CadastrarAluno(string nome, string endereco, string nomeDosPais, int idade, int turmaId)
+    {
+        try
+        {
+            // Chama o método do serviço para registrar o aluno
+            await alunoService.CadastrarAluno(nome, endereco, nomeDosPais, idade, turmaId);
+        }
+        catch (Exception ex)
+        {
+            // Lança uma exceção em caso de erro
+            throw new Exception($"Erro ao cadastrar aluno: {ex.Message}");
+        }
+    }
+}

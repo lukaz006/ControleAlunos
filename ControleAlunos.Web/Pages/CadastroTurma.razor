@@ -1,0 +1,102 @@
+﻿@page "/cadastroTurma"
+@inject IAlunoService alunoService
+@inject ITurmaService turmaService
+@inject NavigationManager navigationManager
+
+<div class="container mt-4">
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link" id="aluno-tab" data-toggle="tab" href="cadastroAluno" role="tab" aria-controls="aluno" aria-selected="false">Cadastrar Aluno</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" id="turma-tab" data-toggle="tab" href="cadastroTurma" role="tab" aria-controls="turma" aria-selected="true">Cadastrar Turma</a>
+        </li>
+    </ul>
+    <div class="tab-content mt-3" id="myTabContent">
+        <div class="tab-pane fade show active" id="turma" role="tabpanel" aria-labelledby="turma-tab">
+            <!-- Formulário de cadastro de aluno -->
+            <form @onsubmit="HandleTurma">
+                <form @onsubmit="HandleTurma">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="inputNomeDaTurma"><strong>Nome da Turma</strong></label>
+                            <input type="text" class="form-control @((MostrarErroNomeDaTurma && string.IsNullOrWhiteSpace(Turma.NomeDaTurma)) ? "is-invalid" : "")" id="inputNomeDaTurma"
+                                   placeholder="Nome da turma" @bind="Turma.NomeDaTurma">
+                            @if (MostrarErroNomeDaTurma && string.IsNullOrWhiteSpace(Turma.NomeDaTurma))
+                            {
+                                <div class="invalid-feedback">Por favor, insira o nome da turma.</div>
+                            }
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="inputProfessor"><strong>Professor</strong></label>
+                            <input type="text" class="form-control @((MostrarErroProfessor && string.IsNullOrWhiteSpace(Turma.Professor)) ? "is-invalid" : "")" id="inputProfessor"
+                                   placeholder="Professor" @bind="Turma.Professor">
+                            @if (MostrarErroProfessor && string.IsNullOrWhiteSpace(Turma.Professor))
+                            {
+                                <div class="invalid-feedback">Por favor, insira o nome do professor.</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="inputTurno"><strong>Turno</strong></label>
+                        <input type="text" class="form-control @((MostrarErroTurno && string.IsNullOrWhiteSpace(Turma.Turno)) ? "is-invalid" : "")" id="inputTurno"
+                               placeholder="Turno da turma" @bind="Turma.Turno">
+                        @if (MostrarErroTurno && string.IsNullOrWhiteSpace(Turma.Turno))
+                        {
+                            <div class="invalid-feedback">Por favor, insira o turno da turma.</div>
+                        }
+                    </div>
+                    <br>
+                    <button type="submit" class="btn btn-primary">Cadastrar</button>
+                </form>
+            </form>
+        </div>        
+    </div>
+</div>
+
+@code {
+
+    public TurmaDto Turma { get; set; } = new TurmaDto();
+    public bool MostrarErroNomeDaTurma { get; set; }
+    public bool MostrarErroProfessor { get; set; }
+    public bool MostrarErroTurno { get; set; }
+
+    private async Task HandleTurma()
+    {
+        MostrarErroNomeDaTurma = string.IsNullOrWhiteSpace(Turma.NomeDaTurma);
+        MostrarErroProfessor = string.IsNullOrWhiteSpace(Turma.Professor);
+        MostrarErroTurno = string.IsNullOrWhiteSpace(Turma.Turno);
+
+        if (!MostrarErroNomeDaTurma && !MostrarErroProfessor && !MostrarErroTurno)
+        {
+            try
+            {
+                // Chama o método para cadastrar o aluno
+                await CadastrarTurma(Turma.NomeDaTurma, Turma.Professor, Turma.Turno);
+                // Limpa os dados do aluno após o cadastro
+                Turma = new TurmaDto();
+                // Recarrega a página após o cadastro
+                navigationManager.NavigateTo("/cadastro");
+            }
+            catch (Exception ex)
+            {
+                // Trata erros de requisição
+                Console.WriteLine($"Erro ao cadastrar turma: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task CadastrarTurma(string nomeDaTurma, string professor, string turno)
+    {
+        try
+        {
+            // Chama o método do serviço para registrar o aluno
+            await turmaService.CadastrarTurma(nomeDaTurma, professor, turno);
+        }
+        catch (Exception ex)
+        {
+            // Lança uma exceção em caso de erro
+            throw new Exception($"Erro ao cadastrar turma: {ex.Message}");
+        }
+    }
+}

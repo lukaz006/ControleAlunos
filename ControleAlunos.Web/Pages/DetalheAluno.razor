@@ -1,0 +1,182 @@
+﻿@page "/alunos/{id:int}"
+@inject NavigationManager navigationManager
+@inject IAlunoService alunoService
+@inject ITurmaService turmaService
+
+@if (Aluno == null)
+{
+    <h3>Carregando informações do aluno...</h3>
+}
+else
+{
+    <div class="container">
+        <h3>Detalhes do Aluno</h3>
+        <div class="card" style="width: 18rem;">
+            <div class="card-header">
+                @if (Editando)
+                {
+                    <strong>Nome: </strong>
+                    <input class="form-control" @bind="Aluno.Nome" />
+                }
+                else
+                {
+                    @Aluno.Nome
+                }
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item">ID: @Aluno.Id</li>
+                <li class="list-group-item">
+                    <strong>Endereço: </strong>
+                    @if (Editando)
+                    {
+                        <input class="form-control" @bind="Aluno.Endereco" />
+                    }
+                    else
+                    {
+                        @Aluno.Endereco
+                    }
+                    </li>
+                <li class="list-group-item">
+                    <strong>Responsável: </strong>
+                    @if (Editando)
+                    {
+                        <input class="form-control" @bind="Aluno.NomePaiOuMae" />
+                    }
+                    else
+                    {
+                        @Aluno.NomePaiOuMae
+                    }
+                </li>
+                <li class="list-group-item">
+                    <strong>Idade: </strong>
+                    @if (Editando)
+                    {
+                        <input class="form-control" @bind="Aluno.Idade" />
+                    }
+                    else
+                    {
+                        @Aluno.Idade
+                    }
+                </li>
+                <li class="list-group-item">
+                    <strong>Turma: </strong>
+                    @if (Editando)
+                    {
+                        <label for="inputTurma"></label>
+                        <div class="position-relative">
+                            <select id="inputTurma" class="form-control @((MostrarErroTurma && Aluno.TurmaId == 0 ) ? "is-invalid" : "")" @bind="Aluno.TurmaId">
+                                <option value="" selected>Selecione...</option>
+                                @foreach (var turma in Turmas)
+                                {
+                                    <option value="@turma.Id">@turma.NomeDaTurma</option>
+                                }
+                            </select>
+                            @if (MostrarErroTurma && Aluno.TurmaId == 0)
+                            {
+                                <div class="invalid-feedback">Por favor, selecione a turma do aluno.</div>
+                            }
+                            <div class="position-absolute" style="top: 50%; right: 10px; transform: translateY(-50%);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 1 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                                </svg>
+                            </div>
+                        </div>                    
+                    }
+                    else
+                    {
+                        @Aluno.Turma
+                    }
+                </li>
+            </ul>
+            <div class="card-body">
+                Presença:
+                <button class="btn btn-outline-success" @onclick="()=>Registrar(Aluno.Id, true)">✔</button>
+                <button class="btn btn-outline-danger" @onclick="()=>Registrar(Aluno.Id, false)">✖</button>
+            </div>
+            <div class="card-body">
+                @if (Editando)
+                {
+                    <button class="btn btn-outline-success" @onclick="SalvarEdicao">Salvar</button>
+                    <button class="btn btn-outline-secondary" @onclick="CancelarEdicao">Cancelar</button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-primary" @onclick="Editar">Editar</button>
+                    <button class="btn btn-outline-danger" @onclick="()=>Deletar(Aluno.Id)">Excluir</button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    public AlunosDto Aluno { get; set; }
+    public bool Editando { get; set; } = false;
+    public bool MostrarErroTurma { get; set; }
+    public IEnumerable<TurmaDto> Turmas { get; set; } = new List<TurmaDto>();
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Aluno = await alunoService.GetAluno(Id);
+        Turmas = await turmaService.GetTurmas();
+    }    
+
+    private async Task Registrar(int alunoId, bool presenca)
+    {
+        try
+        {
+            await alunoService.RegistrarPresenca(alunoId, presenca);
+            navigationManager.NavigateTo($"/");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao registrar presença/falta: {ex.Message}");
+        }
+    }
+
+    private async Task Deletar(int alunoId)
+    {
+        try
+        {
+            await alunoService.DeletarAluno(alunoId);
+            navigationManager.NavigateTo($"/");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao deletar aluno: {ex.Message}");
+        }
+    }
+
+    private void Editar()
+    {
+        Editando = true;
+    }
+
+    private async Task SalvarEdicao()
+    {
+        MostrarErroTurma = Aluno.TurmaId == 0;
+
+        if (!MostrarErroTurma)
+        {
+            try
+            {
+                // Chama o método do serviço para atualizar o aluno
+                await alunoService.AtualizarAluno(Aluno.Id, Aluno);
+                // Recarrega os detalhes do aluno após a edição
+                Aluno = await alunoService.GetAluno(Id);
+                Editando = false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erro ao atualizar aluno: {ex.Message}");
+            }
+        }        
+    }
+
+    private void CancelarEdicao()
+    {
+        Editando = false;
+    }
+}
